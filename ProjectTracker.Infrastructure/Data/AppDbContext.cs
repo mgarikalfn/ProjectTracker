@@ -7,6 +7,9 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using ProjectTracker.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using ProjectTracker.Domain.Identity;
+using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.Extensions.Configuration;
 
 namespace ProjectTracker.Infrastructure.Data
 {
@@ -15,8 +18,16 @@ namespace ProjectTracker.Infrastructure.Data
      IdentityRoleClaim<string>, IdentityUserToken<string>>
 
     {
+        public AppDbContext()
+          : base(new DbContextOptionsBuilder<AppDbContext>()
+              .UseSqlServer("Data Source=DESKTOP-D1VN9TT\\SQLEXPRESS;Initial Catalog=ProjectTrackerDb;Integrated Security=True;Encrypt=False;Trust Server Certificate=True")
+              .Options)
+        {
+        }
+
+        // Existing constructor (for dependency injection)
         public AppDbContext(DbContextOptions<AppDbContext> options)
-          : base(options)
+            : base(options)
         {
         }
 
@@ -45,48 +56,92 @@ namespace ProjectTracker.Infrastructure.Data
 
         private void ConfigureIdentityTables(ModelBuilder builder)
         {
-            // Rename the ASP.NET Identity tables
+            // Configure AppUser
             builder.Entity<AppUser>(b =>
             {
                 b.ToTable("Users");
+                b.Property(u => u.Id).HasMaxLength(450); // Set max length for UserId
+
+                // Configure UserRoles relationship with restricted delete behavior
                 b.HasMany(u => u.UserRoles)
-                 .WithOne(ur => ur.User)
-                 .HasForeignKey(ur => ur.UserId)
-                 .IsRequired();
+                    .WithOne(ur => ur.User)
+                    .HasForeignKey(ur => ur.UserId)
+                    .OnDelete(DeleteBehavior.Restrict); // Changed from Cascade
+
+                // Configure other relationships
+                b.HasMany(u => u.AssignedTasks)
+                    .WithOne(t => t.Assignee)
+                    .HasForeignKey(t => t.AssigneeId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasMany(u => u.Teams)
+                    .WithOne(tm => tm.User)
+                    .HasForeignKey(tm => tm.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
+            // Configure AppRole
             builder.Entity<AppRole>(b =>
             {
                 b.ToTable("Roles");
+                b.Property(r => r.Id).HasMaxLength(450); // Set max length for RoleId
+
                 b.HasMany(r => r.UserRoles)
-                 .WithOne(ur => ur.Role)
-                 .HasForeignKey(ur => ur.RoleId)
-                 .IsRequired();
+                    .WithOne(ur => ur.Role)
+                    .HasForeignKey(ur => ur.RoleId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
+            // Configure AppUserRole (junction table)
             builder.Entity<AppUserRole>(b =>
             {
                 b.ToTable("UserRoles");
+
+                // Set max lengths for composite key columns
+                b.Property(ur => ur.UserId).HasMaxLength(450);
+                b.Property(ur => ur.RoleId).HasMaxLength(450);
+
+                // Define composite primary key
+                b.HasKey(ur => new { ur.UserId, ur.RoleId });
+
+                // Configure relationships with appropriate delete behaviors
+                b.HasOne(ur => ur.User)
+                    .WithMany(u => u.UserRoles)
+                    .HasForeignKey(ur => ur.UserId)
+                    .OnDelete(DeleteBehavior.Restrict); // Prevents multiple cascade paths
+
+                b.HasOne(ur => ur.Role)
+                    .WithMany(r => r.UserRoles)
+                    .HasForeignKey(ur => ur.RoleId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
+            // Configure other Identity tables with proper string lengths
             builder.Entity<IdentityUserClaim<string>>(b =>
             {
                 b.ToTable("UserClaims");
+                b.Property(uc => uc.UserId).HasMaxLength(450);
             });
 
             builder.Entity<IdentityUserLogin<string>>(b =>
             {
                 b.ToTable("UserLogins");
+                b.Property(l => l.ProviderKey).HasMaxLength(450);
+                b.Property(l => l.LoginProvider).HasMaxLength(450);
             });
 
             builder.Entity<IdentityRoleClaim<string>>(b =>
             {
                 b.ToTable("RoleClaims");
+                b.Property(rc => rc.RoleId).HasMaxLength(450);
             });
 
             builder.Entity<IdentityUserToken<string>>(b =>
             {
                 b.ToTable("UserTokens");
+                b.Property(t => t.UserId).HasMaxLength(450);
+                b.Property(t => t.LoginProvider).HasMaxLength(450);
+                b.Property(t => t.Name).HasMaxLength(450);
             });
         }
 
@@ -111,6 +166,7 @@ namespace ProjectTracker.Infrastructure.Data
             // Task configuration
             builder.Entity<ProjectTask>(b =>
             {
+                b.ToTable("ProjectTasks");
                 b.Property(t => t.Title).IsRequired().HasMaxLength(100);
                 b.Property(t => t.Description).HasMaxLength(1000);
                 b.Property(t => t.Status)
@@ -131,7 +187,6 @@ namespace ProjectTracker.Infrastructure.Data
             builder.Entity<Team>(b =>
             {
                 b.Property(t => t.Name).IsRequired().HasMaxLength(100);
-                b.Property(t => t.Description).HasMaxLength(500);
                 b.Property(t => t.CreatedAt).HasDefaultValueSql("getutcdate()");
             });
 
@@ -145,7 +200,6 @@ namespace ProjectTracker.Infrastructure.Data
             // Project Update configuration
             builder.Entity<ProjectUpdate>(b =>
             {
-                b.Property(u => u.UpdateText).IsRequired().HasMaxLength(1000);
                 b.Property(u => u.CreatedAt).HasDefaultValueSql("getutcdate()");
                 b.Property(u => u.Type)
                     .HasConversion<string>()
@@ -183,7 +237,7 @@ namespace ProjectTracker.Infrastructure.Data
                     .OnDelete(DeleteBehavior.Cascade);
 
                 b.HasOne(pa => pa.Project)
-                    .WithMany(p => p.TeamAssignments)
+                    .WithMany(p => p.Assignments)
                     .HasForeignKey(pa => pa.ProjectId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
@@ -211,8 +265,17 @@ namespace ProjectTracker.Infrastructure.Data
             {
                 b.HasOne(t => t.Assignee)
                     .WithMany(u => u.AssignedTasks)
-                    .HasForeignKey(t => t.AssigneeId)
-                    .OnDelete(DeleteBehavior.Restrict); // Don't cascade delete
+                    .HasForeignKey(t => t.AssigneeId)  // Must be string to match AppUser.Id
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Team to Team Lead - Fix foreign key type
+            builder.Entity<Team>(b =>
+            {
+                b.HasOne(t => t.TeamLead)
+                    .WithMany()
+                    .HasForeignKey(t => t.TeamLeadId)  // Must be string to match AppUser.Id
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             // Project to Updates (one-to-many)
@@ -222,15 +285,6 @@ namespace ProjectTracker.Infrastructure.Data
                     .WithOne(u => u.Project)
                     .HasForeignKey(u => u.ProjectId)
                     .OnDelete(DeleteBehavior.Cascade);
-            });
-
-            // Team to Team Lead (one-to-one)
-            builder.Entity<Team>(b =>
-            {
-                b.HasOne(t => t.TeamLead)
-                    .WithMany()
-                    .HasForeignKey(t => t.TeamLeadId)
-                    .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }

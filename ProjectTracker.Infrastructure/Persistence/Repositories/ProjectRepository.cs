@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using ProjectTracker.Domain.Entities;
 using ProjectTracker.Domain.Interface;
+using ProjectTracker.Infrastructure.Data;
 using static ProjectTracker.Domain.Enum.Enums;
 
 namespace ProjectTracker.Infrastructure.Persistence.Repositories

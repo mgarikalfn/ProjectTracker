@@ -7,14 +7,23 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="BackGround\**" />
+    <Compile Remove="External\**" />
+    <Compile Remove="Services\**" />
+    <EmbeddedResource Remove="BackGround\**" />
+    <EmbeddedResource Remove="External\**" />
+    <EmbeddedResource Remove="Services\**" />
+    <None Remove="BackGround\**" />
+    <None Remove="External\**" />
+    <None Remove="Services\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\ProjectTracker.Domain\ProjectTracker.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Extension\" />
-    <Folder Include="External\" />
-    <Folder Include="BackGround\" />
-    <Folder Include="Services\" />
+    <Folder Include="Migrations\" />
   </ItemGroup>
 
   <ItemGroup>

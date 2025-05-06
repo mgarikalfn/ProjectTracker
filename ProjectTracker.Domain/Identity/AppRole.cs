@@ -9,6 +9,8 @@ namespace ProjectTracker.Domain.Identity
 {
     public class AppRole:IdentityRole
     {
+       public string Name { get; set; }
+
         public string Description { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public ICollection<AppUserRole> UserRoles { get; set; } = new List<AppUserRole>();

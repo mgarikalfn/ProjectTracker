@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ProjectTracker.Domain.Identity;
 using static ProjectTracker.Domain.Enum.Enums;
 using TaskStatus = ProjectTracker.Domain.Enum.Enums.TaskStatus;
 
@@ -17,12 +18,16 @@ namespace ProjectTracker.Domain.Entities
         public DateTime CreatedDate { get; private set; }
         public DateTime? DueDate { get; private set; }
 
+        public decimal EstimatedHours {  get; private set; }
+
+        public decimal ActualHours { get; private set; }
+
         // Relationships
         public Guid ProjectId { get; private set; }
         public virtual Project Project { get; private set; }
 
-        public Guid? AssigneeId { get; private set; }
-        public virtual TeamMember? Assignee { get; private set; }
+        public string? AssigneeId { get; private set; }
+        public virtual AppUser? Assignee { get; private set; }
         public string? ExternalTaskId { get; private set; } // Jira/DevOps ID
         public string? ExternalSystem { get; private set; } // "Jira"/"AzureDevOps"
         public DateTime? LastSynced { get; private set; }

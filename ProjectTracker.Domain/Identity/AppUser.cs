@@ -12,11 +12,13 @@ namespace ProjectTracker.Domain.Identity
     {
         public string DisplayName { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+       //ublic string ? Position { get; set; }
         public DateTime? LastActive { get; set; }
         //public string ? ProfilePictureUrl { get; set; }
 
         public ICollection<TeamMember> Teams { get; set; } = new List<TeamMember>();
         public ICollection<ProjectTask> AssignedTasks { get; set; } = new List<ProjectTask>();
         public ICollection<AppUserRole> UserRoles { get; set; } = new List<AppUserRole>();
+        public virtual ICollection<TeamMember> TeamMemberships { get; set; }
     }
 }

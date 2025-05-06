@@ -22,7 +22,7 @@ namespace ProjectTracker.Domain.Entities
         public void UpdateContent(string newContent)
         {
             if (string.IsNullOrWhiteSpace(newContent))
-                throw new DomainException("Comment cannot be empty");
+                //throw new DomainException("Comment cannot be empty");
 
             Content = newContent;
         }

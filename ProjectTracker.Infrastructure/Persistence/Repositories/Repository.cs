@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Entity;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using ProjectTracker.Domain.Entities;
+using ProjectTracker.Infrastructure.Data;
 
 namespace ProjectTracker.Infrastructure.Persistence.Repositories
 {
@@ -48,7 +49,7 @@ namespace ProjectTracker.Infrastructure.Persistence.Repositories
 
         public async Task<bool> ExistsAsync(int id)
         {
-            return await _context.Set<T>().AnyAsync(e => e.Id == id);
+            return await _context.Set<T>().AnyAsync(e => e.Id == (Guid)Convert.ChangeType(id, typeof(Guid)));
         }
     }
 }
