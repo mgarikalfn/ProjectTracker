@@ -17,6 +17,6 @@ namespace ProjectTracker.Domain.Entities
         public virtual AppUser? TeamLead { get; private set; }
 
         public ICollection<TeamMember> Members { get; set; } = new List<TeamMember>();
-        public ICollection<ProjectAssignment> ProjectAssignments { get; set; } = new List<ProjectAssignment>();
+      
     }
 }

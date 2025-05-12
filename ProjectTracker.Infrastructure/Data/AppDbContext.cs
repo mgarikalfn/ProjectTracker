@@ -212,29 +212,29 @@ namespace ProjectTracker.Infrastructure.Data
         {
             // Team Member (User to Team many-to-many)
             builder.Entity<TeamMember>(b =>
-            {
-                b.HasKey(tm => new { tm.UserId, tm.TeamId });
-
-                b.HasOne(tm => tm.User)
-                    .WithMany(u => u.Teams)
-                    .HasForeignKey(tm => tm.UserId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
+            { 
+                // Optional team association
                 b.HasOne(tm => tm.Team)
                     .WithMany(t => t.Members)
                     .HasForeignKey(tm => tm.TeamId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                // Link to Identity User
+                b.HasOne(tm => tm.User)
+                    .WithMany()
+                    .HasForeignKey(tm => tm.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
             // Project Assignment (Team to Project many-to-many)
             builder.Entity<ProjectAssignment>(b =>
             {
-                b.HasKey(pa => new { pa.TeamId, pa.ProjectId });
+                b.HasKey(pa => new { pa.DeveloperId, pa.ProjectId });
 
-                b.HasOne(pa => pa.Team)
-                    .WithMany(t => t.ProjectAssignments)
-                    .HasForeignKey(pa => pa.TeamId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                b.HasOne(pa => pa.Developer)
+                   .WithMany(tm => tm.ProjectAssignments)
+                   .HasForeignKey(pa => pa.DeveloperId)
+                   .HasPrincipalKey(tm => tm.UserId); // Maps to TeamMember.UserId (string)
 
                 b.HasOne(pa => pa.Project)
                     .WithMany(p => p.Assignments)
@@ -242,9 +242,16 @@ namespace ProjectTracker.Infrastructure.Data
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
+                builder.Entity<TeamMember>()
+                   .HasIndex(tm => tm.UserId)
+                   .IsUnique();
             // Project to Tasks (one-to-many)
             builder.Entity<Project>(b =>
             {
+                b.HasMany(p => p.Assignments)
+                   .WithOne(pa => pa.Project)
+                   .HasForeignKey(pa => pa.ProjectId)
+                   .OnDelete(DeleteBehavior.Cascade);
                 b.HasMany(p => p.Tasks)
                     .WithOne(t => t.Project)
                     .HasForeignKey(t => t.ProjectId)

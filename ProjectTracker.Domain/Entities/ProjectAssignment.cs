@@ -2,13 +2,13 @@
 {
     public class ProjectAssignment:BaseEntity
     {
-        public Guid ProjectId { get; set; }
-        public Guid TeamId { get; set; }
+        public string ProjectId { get; set; }
+        public string DeveloperId { get; set; }
         public DateTime AssignedDate { get; set; }
-        public decimal? AllocationPercentage { get; set; } // 0-100%
+        public decimal AllocatedHoursPerWeek { get; set; } // e.g., 20h/week
 
         // Navigation
         public virtual Project Project { get; set; }
-        public virtual Team Team { get; set; }
+        public virtual TeamMember Developer { get; set; }
     }
 }

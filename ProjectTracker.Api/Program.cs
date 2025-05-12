@@ -7,6 +7,8 @@ using ProjectTracker.Infrastructure.Extension;
 using MediatR;
 using ProjectTracker.Infrastructure.Persistence.Services;
 using ProjectTracker.Application;
+using ProjectTracker.Infrastructure.Persistence.Repositories;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,10 +20,20 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Add Identity services
 builder.Services.AddIdentityServices(builder.Configuration);
 
+// Register AutoMapper
+builder.Services.AddAutoMapper(typeof(AssemblyMarker).Assembly);
+
+// Register MediatR
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(AssemblyMarker).Assembly));
 
-
+// Register repositories and services
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
+builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddHttpClient<IJiraService, JiraService>();
+
 
 // Add other services
 builder.Services.AddControllers();
@@ -30,8 +42,6 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-
-
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -39,8 +49,6 @@ using (var scope = app.Services.CreateScope())
     {
         var roleManager = services.GetRequiredService<RoleManager<AppRole>>();
         await DataSeeder.SeedAsync(roleManager);
-
-
     }
     catch (Exception ex)
     {
@@ -48,6 +56,7 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "An error occurred while seeding roles.");
     }
 }
+
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
@@ -55,16 +64,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Database seeding with enhanced logging
-//ait SeedDatabaseAsync(app);
-
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
-
-
-

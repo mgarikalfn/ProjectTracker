@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -18,7 +19,7 @@ namespace ProjectTracker.Infrastructure.Persistence.Repositories
             _context = context;
         }
 
-        public virtual async Task<T> GetByIdAsync(int id)
+        public virtual async Task<T> GetByIdAsync(string id)
         {
             return await _context.Set<T>().FindAsync(id);
         }
@@ -35,21 +36,40 @@ namespace ProjectTracker.Infrastructure.Persistence.Repositories
             return entity;
         }
 
-        public async Task UpdateAsync(T entity)
+        public async Task<bool> UpdateAsync(T entity)
         {
             _context.Entry(entity).State = EntityState.Modified;
             await _context.SaveChangesAsync();
+            return true;
         }
 
-        public async Task DeleteAsync(T entity)
+        public async Task<bool> DeleteAsync(T entity)
         {
             _context.Set<T>().Remove(entity);
             await _context.SaveChangesAsync();
+            return true;
         }
 
-        public async Task<bool> ExistsAsync(int id)
+        public async Task<bool> ExistsAsync(string id)
         {
             return await _context.Set<T>().AnyAsync(e => e.Id == (Guid)Convert.ChangeType(id, typeof(Guid)));
         }
+
+        public async Task<T> FindAsync(
+             Expression<Func<T, bool>> predicate,
+             Func<IQueryable<T>, IQueryable<T>> includes = null,
+             CancellationToken cancellationToken = default)
+                {
+                    IQueryable<T> query = _context.Set<T>();  // Changed from _dbSet to _context.Set<T>()
+
+                    if (includes != null)
+                    {
+                        query = includes(query);
+                    }
+
+                    return await query
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(predicate, cancellationToken);
+                }
     }
 }

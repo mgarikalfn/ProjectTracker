@@ -10,6 +10,7 @@ namespace ProjectTracker.Domain.Entities
 {
     public class TeamMember:BaseEntity
     {
+       
         public string UserId { get; set; }  // Matches IdentityUser's string Id
         public virtual AppUser User { get; set; }
 
@@ -21,6 +22,9 @@ namespace ProjectTracker.Domain.Entities
         // Relationships
         public Guid? TeamId { get; private set; }
         public virtual Team? Team { get; private set; }
+
+        public virtual ICollection<ProjectAssignment> ProjectAssignments { get; set; } = new List<ProjectAssignment>();
+
 
         public decimal WeeklyCapacityHours { get; private set; } = 40;
         public decimal CurrentWorkloadHours { get; private set; }
